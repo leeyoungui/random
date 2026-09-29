@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리 모둠은? & 발표는 누가?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1b3b2b;
+            font-family: 'Jua', sans-serif;
+            color: #f4f4f0;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .chalk-border {
+            border: 3px dashed rgba(244, 244, 240, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+        .chalk-text {
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+        }
+        .chalk-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(244, 244, 240, 0.6);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .chalk-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .chalk-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(244, 244, 240, 0.4);
+            border-radius: 8px;
+            color: #fff;
+            text-align: center;
+        }
+        .chalk-input:focus {
+            outline: none;
+            border-color: #a3e635;
+            box-shadow: 0 0 8px rgba(163, 230, 53, 0.5);
+        }
+        .handwritten {
+            font-family: 'Nanum Pen Script', cursive;
+            font-size: 1.5rem;
+        }
+
+        /* 3D Flip Card Styles */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .animate-roulette {
+            animation: pulse-glow 0.3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 flex flex-col items-center justify-between">
+
+    <header class="w-full max-w-5xl mx-auto text-center mb-6">
+        <div class="chalk-border p-6 bg-[#183627] relative overflow-hidden">
+            <div class="absolute -top-6 -left-6 text-6xl opacity-20">✏️</div>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl chalk-text text-amber-200 mb-2">
+                우리 모둠은? & 발표는 누가?
+            </h1>
+            <p class="text-emerald-200 text-sm sm:text-base opacity-95">
+                모둠 편성, 3D 카드 뒤집기 발표 순서, 그리고 행운의 랜덤 번호 뽑기까지!
+            </p>
+        </div>
+    </header>
+
+    <main class="w-full max-w-5xl mx-auto flex-grow flex flex-col gap-6">
+        <!-- Tab Navigation -->
+        <div class="flex flex-wrap justify-center gap-2 border-b border-emerald-800 pb-3">
+            <button onclick="switchTab('groups')" id="tabGroupsBtn" class="chalk-btn px-5 py-2 text-base font-bold text-amber-200 bg-emerald-700/60 shadow">
+                👥 모둠 편성 & 카드 뒤집기
+            </button>
+            <button onclick="switchTab('presentation')" id="tabPresBtn" class="chalk-btn px-5 py-2 text-base font-bold text-emerald-300 bg-emerald-900/40">
+                🎯 발표 순서 룰렛 & 카드
+            </button>
+            <button onclick="switchTab('random')" id="tabRandBtn" class="chalk-btn px-5 py-2 text-base font-bold text-emerald-300 bg-emerald-900/40">
+                🎲 행운의 랜덤 번호 뽑기
+            </button>
+        </div>
+
+        <!-- TAB 1: Groups Section -->
+        <div id="tabGroupsContent" class="space-y-6">
+            <section class="chalk-border p-5 bg-[#183627]/90 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <div class="flex items-center gap-2">
+                        <label for="startNum" class="text-sm sm:text-base font-medium">번호 범위:</label>
+                        <input type="number" id="startNum" value="1" min="1" max="99" class="chalk-input w-16 p-1 text-lg" onchange="syncRandomRange()">
+                        <span>~</span>
+                        <input type="number" id="endNum" value="24" min="1" max="99" class="chalk-input w-16 p-1 text-lg" onchange="syncRandomRange()">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="groupCount" class="text-sm sm:text-base font-medium">모둠 수:</label>
+                        <input type="number" id="groupCount" value="4" min="1" max="20" class="chalk-input w-16 p-1 text-lg">
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+                    <button onclick="generateGroups()" class="chalk-btn px-5 py-2 text-base font-bold text-amber-200 flex items-center gap-2 bg-emerald-700/80">
+                        🎲 모둠 편성하기
+                    </button>
+                    <button onclick="flipAllGroupCards()" class="chalk-btn px-4 py-2 text-sm font-bold text-cyan-200 bg-cyan-900/60">
+                        🔄 전체 카드 뒤집기/원위치
+                    </button>
+                </div>
+            </section>
+
+            <div class="text-center text-sm text-emerald-300/80">
+                💡 각 모둠 카드를 클릭하면 카드가 뒤집히며 모둠원과 역할이 나타납니다!
+            </div>
+
+            <section id="groupsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Initial placeholder -->
+                <div class="col-span-full py-16 text-center chalk-border bg-[#183627]/50 text-emerald-300">
+                    <div class="text-5xl mb-3">🖍️</div>
+                    <p class="text-lg">위쪽에서 번호 범위와 모둠 수를 입력한 뒤 <br class="sm:hidden">[모둠 편성하기] 버튼을 눌러주세요!</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 2: Presentation Order Section -->
+        <div id="tabPresContent" class="space-y-6 hidden">
+            <section class="chalk-border p-5 bg-[#183627]/90 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-200 font-bold">📋 모둠별 발표 순서 정하기</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="startRoulette()" id="rouletteBtn" class="chalk-btn px-5 py-2 text-base font-bold text-cyan-200 flex items-center gap-2 bg-cyan-900/60" disabled>
+                        🎯 발표 순서 룰렛 돌리기
+                    </button>
+                    <button onclick="resetPresentation()" class="chalk-btn px-4 py-2 text-sm font-bold text-rose-200 bg-rose-900/40">
+                        🔄 순서 초기화
+                    </button>
+                </div>
+            </section>
+
+            <div id="statusBanner" class="hidden chalk-border p-4 bg-[#142e20] text-center">
+                <div id="rouletteDisplay" class="text-2xl sm:text-3xl text-amber-300 font-bold tracking-wide">
+                    발표 순서를 추첨 중입니다... 🎰
+                </div>
+            </div>
+
+            <section id="presentationContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full py-16 text-center chalk-border bg-[#183627]/50 text-emerald-300">
+                    <div class="text-5xl mb-3">🎯</div>
+                    <p class="text-lg">먼저 [모둠 편성하기]를 완료한 후 발표 순서를 뽑아주세요!</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 3: Random Individual Draw Section -->
+        <div id="tabRandContent" class="space-y-6 hidden">
+            <section class="chalk-border p-5 bg-[#183627]/90 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+                    <div class="flex items-center gap-2">
+                        <span class="text-amber-200 font-bold text-base">🎁 행운의 발표자 뽑기</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="randStartNum" class="text-sm font-medium">번호 범위:</label>
+                        <input type="number" id="randStartNum" value="1" min="1" max="99" class="chalk-input w-16 p-1 text-base" onchange="initRandomDrawGrid()">
+                        <span>~</span>
+                        <input type="number" id="randEndNum" value="24" min="1" max="99" class="chalk-input w-16 p-1 text-base" onchange="initRandomDrawGrid()">
+                    </div>
+                    <span id="remainingCountText" class="text-sm text-emerald-300">(남은 인원: 24명 / 총 24명)</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+                    <button onclick="drawOneRandomStudent()" class="chalk-btn px-5 py-2 text-base font-bold text-amber-200 bg-emerald-700/80 flex items-center gap-2 shadow">
+                        🎲 행운의 발표자 1명 뽑기
+                    </button>
+                    <button onclick="initRandomDrawGrid()" class="chalk-btn px-4 py-2 text-sm font-bold text-rose-200 bg-rose-900/40">
+                        🔄 뽑기 초기화
+                    </button>
+                </div>
+            </section>
+
+            <div class="text-center text-sm text-emerald-300/80">
+                ✨ 번호 카드를 직접 클릭하거나 [행운의 발표자 1명 뽑기] 버튼을 누르면 카드가 뒤집히며 당첨 번호가 나타납니다!
+            </div>
+
+            <section id="randomDrawContainer" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                <!-- Dynamically generated cards -->
+            </section>
+        </div>
+    </main>
+
+    <footer class="w-full max-w-5xl mx-auto text-center mt-8 text-xs text-emerald-300/70">
+        <p>수업 시간 활기찬 모둠 활동과 공정한 발표를 위한 도우미 칠판 ✨</p>
+    </footer>
+
+    <script>
+        let currentGroups = [];
+        let presentationOrder = [];
+        let isSpinning = false;
+        let allFlippedState = false;
+        
+        // Tab 3 state
+        let randomDrawCards = []; // array of { number: X, isFlipped: false }
+
+        const rolesList = [
+            { name: '기록', icon: '📝', desc: '활동 내용 기록' },
+            { name: '발표', icon: '🎤', desc: '결과물 발표' },
+            { name: '타이머', icon: '⏱️', desc: '시간 관리' },
+            { name: '질문', icon: '🙋', desc: '발표 후 질문' }
+        ];
+
+        // Web Audio API Win Sound
+        function playWinSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                
+                // Play a cheerful triad chime chord (C5, E5, G5, C6)
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + index * 0.08);
+                    
+                    gain.gain.setValueAtTime(0, now + index * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.25, now + index * 0.08 + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.08 + 0.45);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now + index * 0.08);
+                    osc.stop(now + index * 0.08 + 0.5);
+                });
+            } catch(e) {
+                console.log("Audio not supported or blocked", e);
+            }
+        }
+
+        function switchTab(tabName) {
+            document.getElementById('tabGroupsContent').classList.add('hidden');
+            document.getElementById('tabPresContent').classList.add('hidden');
+            document.getElementById('tabRandContent').classList.add('hidden');
+
+            document.getElementById('tabGroupsBtn').className = 'chalk-btn px-5 py-2 text-base font-bold text-emerald-300 bg-emerald-900/40';
+            document.getElementById('tabPresBtn').className = 'chalk-btn px-5 py-2 text-base font-bold text-emerald-300 bg-emerald-900/40';
+            document.getElementById('tabRandBtn').className = 'chalk-btn px-5 py-2 text-base font-bold text-emerald-300 bg-emerald-900/40';
+
+            if (tabName === 'groups') {
+                document.getElementById('tabGroupsContent').classList.remove('hidden');
+                document.getElementById('tabGroupsBtn').className = 'chalk-btn px-5 py-2 text-base font-bold text-amber-200 bg-emerald-700/60 shadow';
+            } else if (tabName === 'presentation') {
+                document.getElementById('tabPresContent').classList.remove('hidden');
+                document.getElementById('tabPresBtn').className = 'chalk-btn px-5 py-2 text-base font-bold text-amber-200 bg-emerald-700/60 shadow';
+                renderPresentationView();
+            } else if (tabName === 'random') {
+                document.getElementById('tabRandContent').classList.remove('hidden');
+                document.getElementById('tabRandBtn').className = 'chalk-btn px-5 py-2 text-base font-bold text-amber-200 bg-emerald-700/60 shadow';
+                if (randomDrawCards.length === 0) {
+                    initRandomDrawGrid();
+                } else {
+                    renderRandomDrawGrid();
+                }
+            }
+        }
+
+        function shuffleArray(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function syncRandomRange() {
+            const start = document.getElementById('startNum').value;
+            const end = document.getElementById('endNum').value;
+            document.getElementById('randStartNum').value = start;
+            document.getElementById('randEndNum').value = end;
+            initRandomDrawGrid();
+        }
+
+        function generateGroups() {
+            const start = parseInt(document.getElementById('startNum').value);
+            const end = parseInt(document.getElementById('endNum').value);
+            const gCount = parseInt(document.getElementById('groupCount').value);
+
+            if (isNaN(start) || isNaN(end) || start > end) {
+                showModalMessage("올바른 번호 범위를 입력해주세요!");
+                return;
+            }
+            if (isNaN(gCount) || gCount <= 0 || gCount > (end - start + 1)) {
+                showModalMessage("모둠 수는 1 이상이며 학생 수보다 클 수 없습니다.");
+                return;
+            }
+
+            let students = [];
+            for (let i = start; i <= end; i++) {
+                students.push(i);
+            }
+
+            students = shuffleArray(students);
+
+            currentGroups = [];
+            for (let i = 0; i < gCount; i++) {
+                currentGroups.push({
+                    id: i + 1,
+                    members: [],
+                    orderRank: null,
+                    isDimmed: false
+                });
+            }
+
+            students.forEach((student, index) => {
+                let groupIdx = index % gCount;
+                currentGroups[groupIdx].members.push(student);
+            });
+
+            currentGroups.forEach(group => {
+                group.members.sort((a, b) => a - b);
+            });
+
+            document.getElementById('rouletteBtn').removeAttribute('disabled');
+            document.getElementById('statusBanner').classList.add('hidden');
+            allFlippedState = false;
+            syncRandomRange();
+
+            renderGroups();
+            renderPresentationView();
+        }
+
+        function renderGroups() {
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
+
+            currentGroups.forEach((group) => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = `perspective-1000 h-80 cursor-pointer`;
+                
+                let membersHtml = group.members.map((mNum, mIdx) => {
+                    let role = rolesList[mIdx % rolesList.length];
+                    return `
+                        <div class="flex items-center justify-between bg-black/20 px-3 py-1.5 rounded-lg border border-emerald-800/40">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-emerald-800 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-inner">${mNum}</span>
+                                <span class="text-sm">번 학생</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-xs bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-700/50 text-amber-200">
+                                <span>${role.icon}</span>
+                                <span class="font-semibold">${role.name}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                cardWrapper.innerHTML = `
+                    <div class="flip-card-inner ${allFlippedState ? 'flipped' : ''}" onclick="this.classList.toggle('flipped')">
+                        <!-- Front Face (Cover) -->
+                        <div class="flip-card-front chalk-border bg-[#183627] p-6 flex flex-col items-center justify-center text-center shadow-lg border-2 border-emerald-600/60">
+                            <div class="text-4xl mb-3">🏫</div>
+                            <h3 class="text-2xl font-bold text-amber-200 mb-2">제 ${group.id} 모둠</h3>
+                            <p class="text-emerald-300 text-sm mb-4">총 ${group.members.length}명 참여</p>
+                            <span class="inline-block bg-emerald-800/80 text-emerald-200 px-4 py-2 rounded-full text-xs border border-emerald-600 shadow">
+                                ✨ 클릭해서 카드 뒤집기
+                            </span>
+                        </div>
+                        <!-- Back Face (Revealed Members) -->
+                        <div class="flip-card-back chalk-border bg-[#142e20] p-4 flex flex-col justify-between shadow-lg border-2 border-amber-400/50">
+                            <div>
+                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-emerald-800">
+                                    <h3 class="text-lg font-bold text-amber-200 flex items-center gap-1">
+                                        📌 제 ${group.id} 모둠원
+                                    </h3>
+                                    <span class="text-xs text-emerald-300">클릭해서 덮기</span>
+                                </div>
+                                <div class="space-y-1.5 overflow-y-auto max-h-52 pr-1">
+                                    ${membersHtml}
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-emerald-800/60 text-right">
+                                <span class="text-xs text-amber-300/90 font-semibold">우리 모둠 화이팅! 🚀</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(cardWrapper);
+            });
+        }
+
+        function flipAllGroupCards() {
+            allFlippedState = !allFlippedState;
+            const cards = document.querySelectorAll('#groupsContainer .flip-card-inner');
+            cards.forEach(card => {
+                if (allFlippedState) {
+                    card.classList.add('flipped');
+                } else {
+                    card.classList.remove('flipped');
+                }
+            });
+        }
+
+        function renderPresentationView() {
+            const container = document.getElementById('presentationContainer');
+            if (currentGroups.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-16 text-center chalk-border bg-[#183627]/50 text-emerald-300">
+                        <div class="text-5xl mb-3">🎯</div>
+                        <p class="text-lg">먼저 [모둠 편성하기]를 완료한 후 발표 순서를 뽑아주세요!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            currentGroups.forEach((group) => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = `perspective-1000 h-64 cursor-pointer`;
+
+                let rankBadge = group.orderRank !== null ? 
+                    `<span class="bg-amber-400 text-stone-900 px-3 py-1 rounded-full text-sm font-bold shadow">발표 ${group.orderRank}순위 🏆</span>` :
+                    `<span class="bg-emerald-900/80 text-emerald-200 px-3 py-1 rounded-full text-sm border border-emerald-600">추첨 대기 중</span>`;
+
+                cardWrapper.innerHTML = `
+                    <div class="flip-card-inner ${group.orderRank !== null ? 'flipped' : ''}" onclick="this.classList.toggle('flipped')">
+                        <!-- Front Face -->
+                        <div class="flip-card-front chalk-border bg-[#183627] p-5 flex flex-col items-center justify-center text-center shadow-lg">
+                            <div class="text-3xl mb-2">🎁</div>
+                            <h3 class="text-xl font-bold text-amber-200 mb-1">제 ${group.id} 모둠 발표 순서</h3>
+                            <p class="text-emerald-300 text-xs mb-3">룰렛이 돌면 순서 카드가 열립니다!</p>
+                            <div>${rankBadge}</div>
+                        </div>
+                        <!-- Back Face -->
+                        <div class="flip-card-back chalk-border bg-[#142e20] p-5 flex flex-col items-center justify-center text-center shadow-lg border-2 border-amber-400/60">
+                            <div class="text-4xl mb-2">🎉</div>
+                            <h3 class="text-2xl font-extrabold text-amber-300 mb-2">제 ${group.id} 모둠</h3>
+                            <div class="bg-amber-400 text-stone-900 px-4 py-2 rounded-xl text-lg font-bold shadow-md">
+                                발표 ${group.orderRank !== null ? group.orderRank : '?'}순위 당첨! 🏆
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(cardWrapper);
+            });
+        }
+
+        function startRoulette() {
+            if (isSpinning || currentGroups.length === 0) return;
+
+            const unpickedGroups = currentGroups.filter(g => g.orderRank === null);
+            if (unpickedGroups.length === 0) {
+                showModalMessage("모든 모둠의 발표 순서가 이미 정해졌습니다! 초기화 후 다시 뽑아보세요.");
+                return;
+            }
+
+            isSpinning = true;
+            const statusBanner = document.getElementById('statusBanner');
+            const rouletteDisplay = document.getElementById('rouletteDisplay');
+            statusBanner.classList.remove('hidden');
+            statusBanner.classList.add('animate-roulette');
+
+            let nextRank = currentGroups.filter(g => g.orderRank !== null).length + 1;
+
+            let counter = 0;
+            let spinInterval = setInterval(() => {
+                let randomGroup = unpickedGroups[Math.floor(Math.random() * unpickedGroups.length)];
+                rouletteDisplay.innerHTML = `🎲 발표 순서 추첨 중... <span class="text-white underline">제 ${randomGroup.id} 모둠</span>`;
+                counter++;
+
+                if (counter > 15) {
+                    clearInterval(spinInterval);
+                    let selectedGroup = unpickedGroups[Math.floor(Math.random() * unpickedGroups.length)];
+                    
+                    selectedGroup.orderRank = nextRank;
+                    selectedGroup.isDimmed = false;
+
+                    // Play success sound effect when result is finalized
+                    playWinSound();
+
+                    statusBanner.classList.remove('animate-roulette');
+                    rouletteDisplay.innerHTML = `🎉 <span class="text-amber-200 font-extrabold text-3xl">발표 ${nextRank}순위: 제 ${selectedGroup.id} 모둠 당첨!</span> 🎉`;
+                    
+                    isSpinning = false;
+                    renderPresentationView();
+                }
+            }, 100);
+        }
+
+        function resetPresentation() {
+            currentGroups.forEach(g => {
+                g.orderRank = null;
+                g.isDimmed = false;
+            });
+            document.getElementById('statusBanner').classList.add('hidden');
+            renderPresentationView();
+        }
+
+        // --- Tab 3: Random Draw Grid Functions ---
+        function initRandomDrawGrid() {
+            const start = parseInt(document.getElementById('randStartNum').value) || 1;
+            const end = parseInt(document.getElementById('randEndNum').value) || 24;
+
+            if (start > end) {
+                showModalMessage("번호 범위의 시작이 끝보다 클 수 없습니다.");
+                return;
+            }
+
+            randomDrawCards = [];
+            for (let i = start; i <= end; i++) {
+                randomDrawCards.push({
+                    number: i,
+                    isFlipped: false
+                });
+            }
+
+            renderRandomDrawGrid();
+            updateRandomRemainingCount();
+        }
+
+        function renderRandomDrawGrid() {
+            const container = document.getElementById('randomDrawContainer');
+            if (!container) return;
+
+            container.innerHTML = '';
+            randomDrawCards.forEach((card, index) => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = `perspective-1000 h-32 cursor-pointer`;
+                cardWrapper.onclick = () => toggleRandomCard(index);
+
+                cardWrapper.innerHTML = `
+                    <div class="flip-card-inner ${card.isFlipped ? 'flipped' : ''}">
+                        <!-- Front Face -->
+                        <div class="flip-card-front chalk-border bg-[#183627] p-3 flex flex-col items-center justify-center text-center shadow-md border-2 border-emerald-600/60 hover:bg-[#204533]">
+                            <div class="text-2xl mb-1">🎁</div>
+                            <span class="text-sm font-bold text-amber-200">${card.number}번</span>
+                            <span class="text-[10px] text-emerald-300/80">클릭하여 뽑기</span>
+                        </div>
+                        <!-- Back Face -->
+                        <div class="flip-card-back chalk-border bg-[#142e20] p-3 flex flex-col items-center justify-center text-center shadow-md border-2 border-amber-400/80">
+                            <div class="text-xs text-amber-300 mb-1">당첨! 🎉</div>
+                            <div class="text-2xl font-extrabold text-amber-200">
+                                ${card.number}번
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(cardWrapper);
+            });
+            updateRandomRemainingCount();
+        }
+
+        function toggleRandomCard(index) {
+            randomDrawCards[index].isFlipped = !randomDrawCards[index].isFlipped;
+            renderRandomDrawGrid();
+        }
+
+        function drawOneRandomStudent() {
+            const unflippedIndices = [];
+            randomDrawCards.forEach((card, idx) => {
+                if (!card.isFlipped) {
+                    unflippedIndices.push(idx);
+                }
+            });
+
+            if (unflippedIndices.length === 0) {
+                showModalMessage("모든 번호 카드가 이미 뽑혔습니다! [뽑기 초기화]를 눌러주세요.");
+                return;
+            }
+
+            // Pick a random unflipped card
+            const randomIndex = unflippedIndices[Math.floor(Math.random() * unflippedIndices.length)];
+            randomDrawCards[randomIndex].isFlipped = true;
+            renderRandomDrawGrid();
+        }
+
+        function updateRandomRemainingCount() {
+            const total = randomDrawCards.length;
+            const flippedCount = randomDrawCards.filter(c => c.isFlipped).length;
+            const remaining = total - flippedCount;
+            const elem = document.getElementById('remainingCountText');
+            if (elem) {
+                elem.innerText = `(남은 인원: ${remaining}명 / 총 ${total}명)`;
+            }
+        }
+
+        function showModalMessage(msg) {
+            let existingModal = document.getElementById('alertModal');
+            if (existingModal) existingModal.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'alertModal';
+            modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50';
+            modal.innerHTML = `
+                <div class="chalk-border bg-[#183627] p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+                    <div class="text-4xl">⚠️</div>
+                    <p class="text-lg text-amber-200 font-semibold">${msg}</p>
+                    <button onclick="document.getElementById('alertModal').remove()" class="chalk-btn px-6 py-2 bg-emerald-700/80 text-white font-bold w-full">
+                        확인
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        window.onload = function() {
+            generateGroups();
+            initRandomDrawGrid();
+        };
+    </script>
+</body>
+</html>
